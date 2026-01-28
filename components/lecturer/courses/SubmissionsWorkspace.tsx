@@ -130,6 +130,7 @@ const SubmissionsWorkspace: React.FC<SubmissionsWorkspaceProps> = ({
 
   // Load course + assessment metadata
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const loadMeta = async () => {
       try {
         setLoadingMeta(true);
@@ -166,6 +167,7 @@ const SubmissionsWorkspace: React.FC<SubmissionsWorkspaceProps> = ({
 
   // Load submissions when assessment changes
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const loadSubs = async () => {
       if (!selectedAssessmentId) {
         setSubmissions([]);

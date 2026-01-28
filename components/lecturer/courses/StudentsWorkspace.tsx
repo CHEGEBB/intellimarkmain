@@ -85,10 +85,12 @@ const StudentsWorkspace: React.FC<StudentsWorkspaceProps> = ({
   };
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     fetchStudents();
   }, []);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const loadCourses = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/auth/lecturer/courses`, {

@@ -585,6 +585,9 @@ const LibraryWorkspace: React.FC<LibraryWorkspaceProps> = ({
 
   // Load base data (courses/units) once
   useEffect(() => {
+    // Skip during SSR
+    if (typeof window === 'undefined') return;
+    
     const loadMeta = async () => {
       try {
         setError(null);
@@ -602,6 +605,9 @@ const LibraryWorkspace: React.FC<LibraryWorkspaceProps> = ({
 
   // Load notes whenever course/unit/week context changes
   useEffect(() => {
+    // Skip during SSR
+    if (typeof window === 'undefined') return;
+    
     const loadNotes = async () => {
       // If there is no valid string id or week, clear and don't fetch
       if (!courseId || !unitId || !selectedWeek) {
