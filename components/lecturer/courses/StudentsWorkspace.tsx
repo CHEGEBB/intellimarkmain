@@ -84,13 +84,64 @@ const StudentsWorkspace: React.FC<StudentsWorkspaceProps> = ({
     }
   };
 
+  // Load students once on mount - SSR GUARD
   useEffect(() => {
+    // CRITICAL: Skip during SSR to prevent build hanging
     if (typeof window === 'undefined') return;
-    fetchStudents();
-  }, []);
+    
+    let isMounted = true; // Prevent state updates on unmounted component
+    
+    const loadStudents = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE_URL}/auth/lecturer/students`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          throw new Error("Failed to fetch students");
+        }
+        
+        const data = await res.json();
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setStudents(data);
+          setError(null);
+        }
+      } catch (err) {
+        if (isMounted) {
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch students list"
+          );
+          setStudents([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+    
+    loadStudents();
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - runs once on mount
 
+  // Load courses once on mount - SSR GUARD
   useEffect(() => {
+    // CRITICAL: Skip during SSR to prevent build hanging
     if (typeof window === 'undefined') return;
+    
+    let isMounted = true; // Prevent state updates on unmounted component
+    
     const loadCourses = async () => {
       try {
         const res = await fetch(`${API_BASE_URL}/auth/lecturer/courses`, {
@@ -98,15 +149,29 @@ const StudentsWorkspace: React.FC<StudentsWorkspaceProps> = ({
           headers: { "Content-Type": "application/json" },
           credentials: "include",
         });
+        
         if (!res.ok) throw new Error("Failed to fetch courses");
+        
         const data = await res.json();
-        setCourses(data);
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setCourses(data);
+        }
       } catch {
-        setCourses([]);
+        if (isMounted) {
+          setCourses([]);
+        }
       }
     };
+    
     loadCourses();
-  }, []);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - runs once on mount
 
   const filteredStudents = students.filter((s) => {
     if (!selectedCourseId) return false;

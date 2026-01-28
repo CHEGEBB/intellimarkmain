@@ -583,54 +583,88 @@ const LibraryWorkspace: React.FC<LibraryWorkspaceProps> = ({
   const contextCourse = courses.find((c) => c.id === courseId);
   const contextUnit = units.find((u) => u.id === unitId);
 
-  // Load base data (courses/units) once
+  // Load base data (courses/units) once - SSR GUARD
   useEffect(() => {
-    // Skip during SSR
+    // CRITICAL: Skip during SSR to prevent build hanging
     if (typeof window === 'undefined') return;
+    
+    let isMounted = true; // Prevent state updates on unmounted component
     
     const loadMeta = async () => {
       try {
         setError(null);
         const [c, u] = await Promise.all([fetchCourses(), fetchUnits()]);
-        setCourses(c);
-        setUnits(u);
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setCourses(c);
+          setUnits(u);
+        }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load library data."
-        );
+        if (isMounted) {
+          setError(
+            err instanceof Error ? err.message : "Failed to load library data."
+          );
+        }
       }
     };
+    
     loadMeta();
-  }, []);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, []); // Empty dependency array - runs once on mount
 
-  // Load notes whenever course/unit/week context changes
+  // Load notes whenever course/unit/week context changes - SSR GUARD
   useEffect(() => {
-    // Skip during SSR
+    // CRITICAL: Skip during SSR to prevent build hanging
     if (typeof window === 'undefined') return;
+    
+    let isMounted = true; // Prevent state updates on unmounted component
     
     const loadNotes = async () => {
       // If there is no valid string id or week, clear and don't fetch
       if (!courseId || !unitId || !selectedWeek) {
-        setNotes([]);
-        setLoading(false);
+        if (isMounted) {
+          setNotes([]);
+          setLoading(false);
+        }
         return;
       }
 
       try {
-        setLoading(true);
-        setError(null);
+        if (isMounted) {
+          setLoading(true);
+          setError(null);
+        }
+        
         const list = await fetchNotesForCourseUnit(courseId, unitId, selectedWeek);
-        setNotes(list);
+        
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setNotes(list);
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to load materials.");
-        setNotes([]);
+        if (isMounted) {
+          setError(err instanceof Error ? err.message : "Failed to load materials.");
+          setNotes([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadNotes();
-  }, [courseId, unitId, selectedWeek]);
+    
+    // Cleanup function
+    return () => {
+      isMounted = false;
+    };
+  }, [courseId, unitId, selectedWeek]); // Only re-run when these specific values change
 
   const handleUpload = async () => {
     // Called after upload completes to refresh list
