@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useLayout } from '@/components/LayoutController';
 import Sidebar from '@/components/Sidebar';
 import Header from '@/components/Header';
@@ -31,7 +31,6 @@ const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || "https://68.221.169.1
 export default function LibraryPage() {
   const { sidebarCollapsed, isMobileView, isTabletView } = useLayout();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [resources, setResources] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('All');
@@ -40,7 +39,7 @@ export default function LibraryPage() {
 
   useEffect(() => {
     router.replace('/student/unitworkspace?action=library');
-  }, [router, searchParams]);
+  }, [router]);
 
   useEffect(() => {
     fetch(`${apiBaseUrl}/bd/student/notes`, {

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -26,7 +27,7 @@ import {
   TrendingUp,
   ListChecks,
 } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import Disclaimer from "@/components/Disclaimer";
 import { useThemeColors } from "@/context/ThemeContext";
 import FloatingThemeButton from "@/components/FloatingThemeButton";
@@ -378,7 +379,8 @@ export default function StudentUnitWorkspace() {
   const { sidebarCollapsed, isMobileView, isTabletView } = useLayout();
   const colors = useThemeColors();
   const router = useRouter();
-  const searchParams = useSearchParams();
+  const [urlAction, setUrlAction] = useState<string>("");
+  const [urlAssessmentId, setUrlAssessmentId] = useState<string>("");
 
   const [activeAction, setActiveAction] = useState<ActiveAction>("cats");
   const [isAccessMinimized, setIsAccessMinimized] = useState(false);
@@ -401,29 +403,34 @@ export default function StudentUnitWorkspace() {
   const [expandedSubmissionId, setExpandedSubmissionId] = useState<string | null>(null);
 
   useEffect(() => {
-    const action = (searchParams.get("action") || "").toLowerCase();
-    if (action === "cats" || action === "assignments" || action === "results" || action === "library") {
-      setActiveAction(action);
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const action = (params.get("action") || "").toLowerCase();
+      const assessmentId = params.get("assessmentId") || "";
+      setUrlAction(action);
+      setUrlAssessmentId(assessmentId);
+      if (action === "cats" || action === "assignments" || action === "results" || action === "library") {
+        setActiveAction(action as ActiveAction);
+      }
     }
-  }, [searchParams]);
+  }, []);
 
-  useEffect(() => {
-    const assessmentId = searchParams.get("assessmentId");
-    if (!assessmentId) return;
-    const action = (searchParams.get("action") || "").toLowerCase();
+ useEffect(() => {
+    if (!urlAssessmentId) return;
+    const action = urlAction.toLowerCase();
     if (action === "results" || action === "library") return;
-    const found = assessments.find((a) => String(a.id) === String(assessmentId)) || null;
+    const found = assessments.find((a) => String(a.id) === String(urlAssessmentId)) || null;
     if (found) {
       setPendingAssessment(found);
       setShowDisclaimer(true);
     }
-  }, [searchParams, assessments]);
+  }, [urlAssessmentId, urlAction, assessments]);
 
   useEffect(() => {
-    const action = (searchParams.get("action") || "").toLowerCase();
+    const action = urlAction.toLowerCase();
     if (action !== "results") return;
 
-    const assessmentId = searchParams.get("assessmentId");
+    const assessmentId = urlAssessmentId;
     if (!assessmentId) return;
 
     const selectedUnitLocal =
@@ -445,7 +452,7 @@ export default function StudentUnitWorkspace() {
     if (match) {
       setExpandedSubmissionId(String(match.submission_id || match.id || ""));
     }
-  }, [searchParams, submissions, units, selectedUnitId]);
+  }, [urlAction, urlAssessmentId, submissions, units, selectedUnitId]);
 
   useEffect(() => {
     if (isMobileView) setIsAccessMinimized(true);
